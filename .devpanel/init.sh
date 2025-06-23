@@ -17,7 +17,7 @@ export COMPOSER_NO_DEV=1
 # Install VSCode Extensions
 if [[ -n "${DP_VSCODE_EXTENSIONS:-}" ]]; then
   # Double check so the extensions directory exists.
-  if [ ! -d $APP_ROOT/.vscode/extensions ]; then
+  if [ -d $APP_ROOT/.vscode/extensions ]; then
     sudo chown -R $(id -un):$(id -gn) $APP_ROOT/.vscode/extensions/
     IFS=','
     for value in $DP_VSCODE_EXTENSIONS; do
