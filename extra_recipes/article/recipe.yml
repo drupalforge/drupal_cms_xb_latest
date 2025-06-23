@@ -1,0 +1,19 @@
+name: Article
+type: devpanel
+description: Re-adds the Article content type for Drupal CMS.
+install:
+  - comment
+recipes:
+  - drupal_cms_content_type_base
+config:
+  strict: false
+  import:
+    comment: '*'
+    node: '*'
+  actions:
+    user.role.content_editor:
+      grantPermissions:
+        - 'create article content'
+        - 'delete article revisions'
+        - 'delete any article content'
+        - 'edit any article content'

@@ -66,6 +66,37 @@ echo
 if [ -z "$(mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD $DB_NAME -e 'show tables')" ]; then
   time drush -n si
 
+  #== Apply the AI recipe.
+  if [ -n "${DP_AI_VIRTUAL_KEY:-}" ]; then
+    echo
+    time drush -n en ai_provider_litellm
+    drush -n key-save litellm_api_key --label="LiteLLM API key" --key-provider=env --key-provider-settings='{
+      "env_variable": "DP_AI_VIRTUAL_KEY",
+      "base64_encoded": false,
+      "strip_line_breaks": true
+    }'
+    drush -n cset ai_provider_litellm.settings api_key litellm_api_key
+    drush -n cset ai_provider_litellm.settings moderation false --input-format yaml
+    drush -n cset ai_provider_litellm.settings host "https://ai.drupalforge.org"
+    drush -q recipe ../recipes/drupal_cms_ai --input=drupal_cms_ai.provider=litellm
+    drush -n cset ai.settings default_providers.chat.provider_id litellm
+    drush -n cset ai.settings default_providers.chat.model_id openai/gpt-4.1
+    drush -n cset ai.settings default_providers.chat_with_complex_json.provider_id litellm
+    drush -n cset ai.settings default_providers.chat_with_complex_json.model_id openai/gpt-4.1
+    drush -n cset ai.settings default_providers.chat_with_image_vision.provider_id litellm
+    drush -n cset ai.settings default_providers.chat_with_image_vision.model_id openai/gpt-4.1
+    drush -n cset ai.settings default_providers.chat_with_structured_response.provider_id litellm
+    drush -n cset ai.settings default_providers.chat_with_structured_response.model_id openai/gpt-4.1
+    drush -n cset ai.settings default_providers.chat_with_tools.provider_id litellm
+    drush -n cset ai.settings default_providers.chat_with_tools.model_id openai/gpt-4.1
+    drush -n cset ai.settings default_providers.embeddings.provider_id litellm
+    drush -n cset ai.settings default_providers.embeddings.model_id openai/text-embedding-3-small
+    drush -n cset ai.settings default_providers.text_to_speech.provider_id litellm
+    drush -n cset ai.settings default_providers.text_to_speech.model_id openai/gpt-4o-mini-realtime-preview
+    drush -n cset ai_assistant_api.ai_assistant.drupal_cms_assistant llm_provider __default__
+    drush -n cset klaro.klaro_app.deepchat status 0
+  fi
+
   echo
   echo 'Tell Automatic Updates about patches.'
   drush -n cset --input-format=yaml package_manager.settings additional_trusted_composer_plugins '["cweagans/composer-patches"]'
@@ -74,6 +105,23 @@ if [ -z "$(mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD $DB_NAME -e 
 else
   drush -n updb
 fi
+
+#== Setup the article content type.
+cp -r extra_recipes/article recipes
+echo 'Run the article content type recipe.'
+time drush -n recipe ../recipes/article
+
+#== Setup experience builder.
+composer require 'drupal/experience_builder:0.x-dev@dev'
+drush pm:en -y experience_builder xb_dev_standard xb_ai
+cd $APP_ROOT
+#== Setup Experience Builder UI.
+cd web/modules/contrib/experience_builder/ui && npm install && npm run build && cd $APP_ROOT
+
+#== Flush all caches.
+echo
+echo 'Flush all caches.'
+time drush cr
 
 #== Warm up caches.
 echo
