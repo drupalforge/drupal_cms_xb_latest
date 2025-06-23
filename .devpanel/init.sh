@@ -16,11 +16,14 @@ export COMPOSER_NO_DEV=1
 
 # Install VSCode Extensions
 if [[ -n "${DP_VSCODE_EXTENSIONS:-}" ]]; then
-  sudo chown -R $(id -un):$(id -gn) $APP_ROOT/.vscode/extensions/
-  IFS=','
-  for value in $DP_VSCODE_EXTENSIONS; do
-    time code-server --install-extension $value --user-data-dir=$APP_ROOT/.vscode
-  done
+  # Double check so the extensions directory exists.
+  if [ ! -d $APP_ROOT/.vscode/extensions ]; then
+    sudo chown -R $(id -un):$(id -gn) $APP_ROOT/.vscode/extensions/
+    IFS=','
+    for value in $DP_VSCODE_EXTENSIONS; do
+      time code-server --install-extension $value --user-data-dir=$APP_ROOT/.vscode
+    done
+  fi
 fi
 
 #== Remove root-owned files.
