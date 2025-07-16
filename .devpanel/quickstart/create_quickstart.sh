@@ -38,6 +38,8 @@ drush sql-dump --result-file=../.devpanel/dumps/db.sql --gzip --extra-dump=--no-
 # Step 2 - Compress static files
 cd $WORK_DIR
 echo -e "> Compress static files"
+# For debugging purposes, let's check the contents of the static files directory
+ls -alh $STATIC_FILES_DIR
 tar czf $DUMPS_DIR/files.tgz -C $STATIC_FILES_DIR .
 
 echo -e "> Store files.tgz to $APP_ROOT/.devpanel/dumps"
