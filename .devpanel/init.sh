@@ -135,6 +135,9 @@ echo 'Populate caches.'
 time drush cache:warm
 time .devpanel/warm
 
+#== Copy the long file to web.
+cp long.php web/long.php
+
 #== Finish measuring script time.
 INIT_DURATION=$SECONDS
 INIT_HOURS=$(($INIT_DURATION / 3600))
