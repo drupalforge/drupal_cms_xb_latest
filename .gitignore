@@ -7,7 +7,6 @@
 /composer.lock
 /config/
 /logs/*
-/patches.lock.json
 /private/
 /recipes/
 /vendor/
