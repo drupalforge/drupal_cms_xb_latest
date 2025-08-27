@@ -2,6 +2,9 @@
 set -eu -o pipefail
 cd $APP_ROOT
 
+# Ensure ownership and permissions are correct.
+sudo chown www:www /home/www/.composer/
+
 # Create required composer.json and composer.lock files
 time composer create-project -n --no-plugins --no-install drupal/cms
 cp -r cms/* ./

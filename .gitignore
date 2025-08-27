@@ -12,3 +12,4 @@
 /vendor/
 /web/
 .ddev/.env
+patches.lock.json
