@@ -9,6 +9,9 @@
 #
 # ----------------------------------------------------------------------
 
+# Use the latest stable Composer.
+sudo composer self-update -n
+
 # Install APT packages.
 if ! command -v npm >/dev/null 2>&1; then
   sudo apt-get update
