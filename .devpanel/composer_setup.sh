@@ -3,7 +3,7 @@ set -eu -o pipefail
 cd $APP_ROOT
 
 # Create required composer.json and composer.lock files
-time composer create-project -n --no-plugins --no-install drupal/cms
+time composer create-project -n --no-plugins --no-install drupal/cms:^1.2
 cp -r cms/* ./
 rm -rf cms patches.lock.json
 
