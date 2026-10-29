@@ -1,4 +1,3 @@
-name: drupal-cms-with-xb-ai
 type: drupal11
 docroot: web
 php_version: "8.3"
@@ -17,16 +16,19 @@ hooks:
         - exec: .devpanel/init.sh
 use_dns_when_possible: true
 composer_version: "2"
+disable_settings_management: true
 web_environment:
     # Set up DevPanel variables.
     - APP_ROOT=$DDEV_COMPOSER_ROOT
+    - DRUSH_OPTIONS_URI=$DDEV_PRIMARY_URL
     - WEB_ROOT=$DDEV_COMPOSER_ROOT/$DDEV_DOCROOT
     - DB_HOST=db
     - DB_PORT=3306
     - DB_USER=db
     - DB_PASSWORD=db
     - DB_NAME=db
-    - DP_APP_ID=starter_template
+    - DP_APP_ID=drupal_cms_xb_latest
     - DB_DRIVER=mysql
+    - COMPOSER_HOME=/home/www/.config/composer
+    - DP_AI_VIRTUAL_KEY=
 corepack_enable: false
-ddev_version_constraint: '>=1.24.0'

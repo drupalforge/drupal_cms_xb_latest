@@ -2,21 +2,23 @@
 set -eu -o pipefail
 cd $APP_ROOT
 
-# Create required composer.json and composer.lock files
-time composer create-project -n --no-plugins --no-install drupal/cms:^1.2
-cp -r cms/* ./
-rm -rf cms patches.lock.json
+# Create required composer.json and composer.lock files.
+composer create-project --no-install ${PROJECT:=drupal/cms}:^1.2
+cp -r ${PROJECT#*/}/* ./
+rm -rf ${PROJECT#*/}
 
-# Programmatically fix Composer 2.2 allow-plugins to avoid errors
-composer config --no-plugins allow-plugins.composer/installers true
-composer config --no-plugins allow-plugins.cweagans/composer-patches true
-composer config --no-plugins allow-plugins.drupal/core-project-message true
-composer config --no-plugins allow-plugins.drupal/core-vendor-hardening true
-composer config --no-plugins allow-plugins.drupal/core-composer-scaffold true
-composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-composer config --no-plugins allow-plugins.phpstan/extension-installer true
-composer config --no-plugins allow-plugins.php-http/discovery true
-composer config --no-plugins allow-plugins.tbachert/spi false
+# Programmatically fix Composer 2.2 allow-plugins to avoid errors.
+composer config --no-plugins allow-plugins.symfony/runtime true
+
+# Scaffold settings.php.
+composer config -jm extra.drupal-scaffold.file-mapping '{
+    "[web-root]/sites/default/settings.php": {
+        "path": "web/core/assets/scaffold/files/default.settings.php",
+        "overwrite": false
+    }
+}'
+composer config scripts.post-drupal-scaffold-cmd \
+    'cd web/sites/default && test -z "$(grep '\''include \$devpanel_settings;'\'' settings.php)" && patch -Np1 -r /dev/null < $APP_ROOT/.devpanel/drupal-settings.patch || :'
 
 # Add repositories for Webform libraries.
 composer config repositories.tippyjs '{
@@ -49,6 +51,22 @@ composer config repositories.tabby '{
             "type": "zip"
         },
         "license": "MIT"
+    }
+}'
+composer config repositories.svg-pan-zoom '{
+    "type": "package",
+    "package": {
+        "name": "svg-pan-zoom/svg-pan-zoom",
+        "version": "3.6.1",
+        "type": "drupal-library",
+        "extra": {
+            "installer-name": "svg-pan-zoom"
+        },
+        "dist": {
+            "url": "https://github.com/ariutta/svg-pan-zoom/archive/refs/tags/3.6.1.zip",
+            "type": "zip"
+        },
+        "license": "BSD-2-Clause"
     }
 }'
 composer config repositories.signature_pad '{
@@ -195,6 +213,22 @@ composer config repositories."jquery.inputmask" '{
         "license": "MIT"
     }
 }'
+composer config repositories."jquery.image-picker" '{
+    "type": "package",
+    "package": {
+        "name": "jquery/image-picker",
+        "version": "0.3.1",
+        "type": "drupal-library",
+        "extra": {
+            "installer-name": "jquery.image-picker"
+        },
+        "dist": {
+            "url": "https://github.com/rvera/image-picker/archive/refs/tags/0.3.1.zip",
+            "type": "zip"
+        },
+        "license": "MIT"
+    }
+}'
 composer config repositories.codemirror '{
     "type": "package",
     "package": {
@@ -211,10 +245,12 @@ composer config repositories.codemirror '{
         "license": "MIT"
     }
 }'
-composer require -n --no-plugins --no-update \
+
+# Add Webform libraries and LiteLLM.
+composer require -n --no-update \
     codemirror/codemirror \
-    cweagans/composer-patches:^2@beta \
-    drupal/ai_provider_litellm:@beta \
+    drupal/ai_provider_litellm \
+    jquery/image-picker \
     jquery/inputmask \
     jquery/intl-tel-input \
     jquery/rateit \
@@ -224,15 +260,6 @@ composer require -n --no-plugins --no-update \
     popperjs/popperjs \
     progress-tracker/progress-tracker \
     signature_pad/signature_pad \
+    svg-pan-zoom/svg-pan-zoom \
     tabby/tabby \
     tippyjs/tippyjs
-
-# Scaffold settings.php.
-composer config -jm extra.drupal-scaffold.file-mapping '{
-    "[web-root]/sites/default/settings.php": {
-        "path": "web/core/assets/scaffold/files/default.settings.php",
-        "overwrite": false
-    }
-}'
-composer config scripts.post-drupal-scaffold-cmd \
-    'cd web/sites/default && test -z "$(grep '\''include \$devpanel_settings;'\'' settings.php)" && patch -Np1 -r /dev/null < $APP_ROOT/.devpanel/drupal-settings.patch || :'

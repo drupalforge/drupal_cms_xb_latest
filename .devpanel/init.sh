@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH="$APP_ROOT/vendor/bin:$PATH"
 if [ -n "${DEBUG_SCRIPT:-}" ]; then
   set -x
 fi
@@ -9,20 +10,12 @@ LOG_FILE="logs/init-$(date +%F-%T).log"
 exec > >(tee $LOG_FILE) 2>&1
 
 TIMEFORMAT=%lR
-# For faster performance, don't audit dependencies automatically.
+# Install regardless of security audit.
 export COMPOSER_NO_AUDIT=1
-
-# Install VSCode Extensions
-if [[ -n "${DP_VSCODE_EXTENSIONS:-}" ]]; then
-  # Double check so the extensions directory exists.
-  if [ -d $APP_ROOT/.vscode/extensions ]; then
-    sudo chown -R $(id -un):$(id -gn) $APP_ROOT/.vscode/extensions/
-    IFS=','
-    for value in $DP_VSCODE_EXTENSIONS; do
-      time code-server --install-extension $value --user-data-dir=$APP_ROOT/.vscode
-    done
-  fi
-fi
+export COMPOSER_NO_BLOCKING=1
+# Keep deprecated var for compatibility with Composer versions where
+# COMPOSER_NO_BLOCKING/--no-blocking is not supported yet.
+export COMPOSER_NO_SECURITY_BLOCKING=1
 
 #== Remove root-owned files.
 echo
@@ -30,42 +23,46 @@ echo Remove root-owned files.
 time sudo rm -rf lost+found
 
 #== Composer install.
+echo
 if [ -f composer.json ]; then
-  echo
-  time composer prl
+  if composer show cweagans/composer-patches ^2 &> /dev/null; then
+    echo 'Update patches.lock.json.'
+    time composer prl
+    echo
+  fi
 else
-  echo
   echo 'Generate composer.json.'
   time source .devpanel/composer_setup.sh
+  echo
 fi
-echo
-time composer -n update --no-progress
+time composer -n install --no-progress
 
 #== Create the private files directory.
 if [ ! -d private ]; then
   echo
   echo 'Create the private files directory.'
-  time mkdir private
+  time mkdir -m 2775 private
 fi
 
 #== Create the config sync directory.
 if [ ! -d config/sync ]; then
   echo
   echo 'Create the config sync directory.'
-  time mkdir -p config/sync
-fi
-
-#== Generate hash salt.
-if [ ! -f .devpanel/salt.txt ]; then
-  echo
-  echo 'Generate hash salt.'
-  time openssl rand -hex 32 > .devpanel/salt.txt
+  time mkdir -pm 2775 config/sync
 fi
 
 #== Install Drupal.
 echo
-if [ -z "$(mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD $DB_NAME -e 'show tables')" ]; then
-  time drush -n si
+if [ -z "$(drush status --field=db-status)" ]; then
+  echo 'Install Drupal.'
+  # Outside DDEV/dev container, fail immediately on the first install error.
+  if [ -z "${DRUPALFORGE_DEVCONTAINER:-}" ] && [ "${IS_DDEV_PROJECT:-}" != "true" ]; then
+    time drush -n si
+  else
+    until time drush -n si; do
+      :
+    done
+  fi
 
   #== Apply the AI recipe.
   if [ -n "${DP_AI_VIRTUAL_KEY:-}" ]; then
@@ -78,7 +75,7 @@ if [ -z "$(mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD $DB_NAME -e 
     }'
     drush -n cset ai_provider_litellm.settings api_key litellm_api_key
     drush -n cset ai_provider_litellm.settings moderation false --input-format yaml
-    drush -n cset ai_provider_litellm.settings host "https://ai.drupalforge.org"
+    drush -n cset ai_provider_litellm.settings host "${DP_AI_HOST:="https://ai.drupalforge.org"}"
     drush -q recipe ../recipes/drupal_cms_ai --input=drupal_cms_ai.provider=litellm
     drush -n cset ai.settings default_providers.chat.provider_id litellm
     drush -n cset ai.settings default_providers.chat.model_id openai/gpt-4.1
@@ -99,12 +96,13 @@ if [ -z "$(mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD $DB_NAME -e 
   fi
 
   echo
-  echo 'Tell Automatic Updates about patches.'
-  drush -n cset --input-format=yaml package_manager.settings additional_trusted_composer_plugins '["cweagans/composer-patches"]'
-  drush -n cset --input-format=yaml package_manager.settings additional_known_files_in_project_root '["patches.json", "patches.lock.json"]'
+  echo 'Enable Automatic Updates.'
+  drush -n cset --input-format=yaml automatic_updates.settings unattended '{"method":"console","level":"patch"}'
   time drush ev '\Drupal::moduleHandler()->invoke("automatic_updates", "modules_installed", [[], FALSE])'
+  time php web/modules/contrib/automatic_updates/auto-update
 else
-  drush -n updb
+  echo 'Update database.'
+  time drush -n updb
 fi
 
 #== Setup the article content type.
@@ -130,11 +128,18 @@ echo 'Run cron.'
 time drush cron
 echo
 echo 'Populate caches.'
-time drush cache:warm
+time drush cache:warm &> /dev/null || :
 time .devpanel/warm
+time .devpanel/warm /user/login
 
 #== Copy the long file to web.
 cp long.php web/long.php
+
+#== Fix ownership for strict permissions.
+echo
+echo 'Fix ownership for strict permissions.'
+time sudo chmod 2775 -R web/sites/default/files private config/sync
+time sudo chown -R ${APACHE_RUN_USER:=www-data}:${APACHE_RUN_GROUP:=www-data} web/sites/default/files private config/sync
 
 #== Finish measuring script time.
 INIT_DURATION=$SECONDS
