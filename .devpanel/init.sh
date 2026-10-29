@@ -111,7 +111,7 @@ echo 'Run the article content type recipe.'
 time drush -n recipe ../recipes/article
 
 #== Setup experience builder.
-composer require 'drupal/experience_builder:0.x-dev@dev'
+composer require -W 'drupal/experience_builder:^0@dev'
 drush pm:en -y experience_builder xb_dev_standard xb_ai
 cd $APP_ROOT
 #== Setup Experience Builder UI.
