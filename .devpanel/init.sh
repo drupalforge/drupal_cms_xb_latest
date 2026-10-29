@@ -100,27 +100,31 @@ if [ -z "$(drush status --field=db-status)" ]; then
   drush -n cset --input-format=yaml automatic_updates.settings unattended '{"method":"console","level":"patch"}'
   time drush ev '\Drupal::moduleHandler()->invoke("automatic_updates", "modules_installed", [[], FALSE])'
   time php web/modules/contrib/automatic_updates/auto-update
+
+  #== Setup the article content type.
+  cp -r extra_recipes/article recipes
+  echo 'Run the article content type recipe.'
+  time drush -q recipe core/recipes/article_content_type
+  time drush -q recipe ../recipes/article
+
+  #== Setup experience builder.
+  composer require 'drupal/experience_builder:^0@dev'
+  drush pm:en -y experience_builder xb_dev_standard xb_ai
+  cd $APP_ROOT
+  #== Setup Experience Builder UI.
+  cd web/modules/contrib/experience_builder/ui && npm install && npm run build && cd $APP_ROOT
+
+  #== Flush all caches.
+  echo
+  echo 'Flush all caches.'
+  time drush cr
+
+  #== Copy the long file to web.
+  cp long.php web/long.php
 else
   echo 'Update database.'
   time drush -n updb
 fi
-
-#== Setup the article content type.
-cp -r extra_recipes/article recipes
-echo 'Run the article content type recipe.'
-time drush -n recipe ../recipes/article
-
-#== Setup experience builder.
-composer require -W 'drupal/experience_builder:^0@dev'
-drush pm:en -y experience_builder xb_dev_standard xb_ai
-cd $APP_ROOT
-#== Setup Experience Builder UI.
-cd web/modules/contrib/experience_builder/ui && npm install && npm run build && cd $APP_ROOT
-
-#== Flush all caches.
-echo
-echo 'Flush all caches.'
-time drush cr
 
 #== Warm up caches.
 echo
@@ -131,9 +135,6 @@ echo 'Populate caches.'
 time drush cache:warm &> /dev/null || :
 time .devpanel/warm
 time .devpanel/warm /user/login
-
-#== Copy the long file to web.
-cp long.php web/long.php
 
 #== Fix ownership for strict permissions.
 echo
