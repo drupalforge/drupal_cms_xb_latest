@@ -108,7 +108,8 @@ fi
 #== Setup the article content type.
 cp -r extra_recipes/article recipes
 echo 'Run the article content type recipe.'
-time drush -n recipe ../recipes/article
+time drush -q recipe core/recipes/article_content_type
+time drush -q recipe ../recipes/article
 
 #== Setup experience builder.
 composer require -W 'drupal/experience_builder:1.x-dev@dev'
