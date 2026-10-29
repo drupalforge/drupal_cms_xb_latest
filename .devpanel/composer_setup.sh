@@ -3,7 +3,7 @@ set -eu -o pipefail
 cd $APP_ROOT
 
 # Create required composer.json and composer.lock files.
-composer create-project --no-install ${PROJECT:=drupal/cms}:^1.2
+composer create-project --no-install ${PROJECT:=drupal/cms}:1.2.3
 cp -r ${PROJECT#*/}/* ./
 rm -rf ${PROJECT#*/}
 
