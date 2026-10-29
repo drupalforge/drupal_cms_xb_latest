@@ -108,7 +108,6 @@ if [ -z "$(drush status --field=db-status)" ]; then
   time drush -q recipe ../recipes/article
 
   #== Setup experience builder.
-  composer require 'drupal/experience_builder:^0@dev'
   drush pm:en -y experience_builder xb_dev_standard xb_ai
   cd $APP_ROOT
   #== Setup Experience Builder UI.

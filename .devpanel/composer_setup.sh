@@ -250,6 +250,7 @@ composer config repositories.codemirror '{
 composer require -n --no-update \
     codemirror/codemirror \
     drupal/ai_provider_litellm \
+    drupal/experience_builder:^0@dev \
     jquery/image-picker \
     jquery/inputmask \
     jquery/intl-tel-input \
