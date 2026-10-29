@@ -11,8 +11,6 @@ exec > >(tee $LOG_FILE) 2>&1
 TIMEFORMAT=%lR
 # For faster performance, don't audit dependencies automatically.
 export COMPOSER_NO_AUDIT=1
-# For faster performance, don't install dev dependencies.
-export COMPOSER_NO_DEV=1
 
 # Install VSCode Extensions
 if [[ -n "${DP_VSCODE_EXTENSIONS:-}" ]]; then
