@@ -235,4 +235,4 @@ composer config --no-plugins -j extra.drupal-scaffold.file-mapping '{
     }
 }'
 composer config --no-plugins scripts.post-drupal-scaffold-cmd \
-    'cd web/sites/default && (patch -Np1 -r /dev/null < "${APP_ROOT}"/.devpanel/drupal-settings.patch | : )'
+    'cd web/sites/default && if ! grep -qF "/.devpanel/settings.devpanel.php" settings.php; then patch -Np1 -r /dev/null < "${APP_ROOT}"/.devpanel/drupal-settings.patch; fi'
