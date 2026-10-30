@@ -108,10 +108,7 @@ if [ -z "$(drush status --field=db-status)" ]; then
   time drush -q recipe ../recipes/article
 
   #== Setup experience builder.
-  drush -n en experience_builder xb_dev_standard xb_ai
-  cd $APP_ROOT
-  #== Setup Experience Builder UI.
-  cd web/modules/contrib/experience_builder/ui && npm install && npm run build && cd $APP_ROOT
+  time drush -n en experience_builder xb_dev_standard xb_ai
 
   #== Flush all caches.
   echo

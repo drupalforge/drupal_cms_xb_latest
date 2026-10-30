@@ -250,6 +250,8 @@ composer config repositories.codemirror '{
 composer require -n --no-update \
     codemirror/codemirror \
     drupal/ai_provider_litellm \
+    drupal/automatic_updates:~4.0.0 \
+    drupal/drupal_cms_olivero:1.2.5 \
     drupal/experience_builder:^0@dev \
     jquery/image-picker \
     jquery/inputmask \
