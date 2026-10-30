@@ -97,6 +97,7 @@ if [ -z "$(drush status --field=db-status)" ]; then
 
   echo
   echo 'Enable Automatic Updates.'
+  drush -n cset --input-format=yaml package_manager.settings additional_trusted_composer_plugins '["symfony/runtime"]'
   drush -n cset --input-format=yaml automatic_updates.settings unattended '{"method":"console","level":"patch"}'
   time drush ev '\Drupal::moduleHandler()->invoke("automatic_updates", "modules_installed", [[], FALSE])'
   time php web/modules/contrib/automatic_updates/auto-update
