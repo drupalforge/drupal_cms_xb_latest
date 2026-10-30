@@ -31,6 +31,7 @@ else {
 }
 $settings['enable_html5_validation'] = FALSE;
 $settings['testing_package_manager'] = TRUE;
+$settings['extension_discovery_scan_tests'] = TRUE;
 
 // When running in a development container, trust reverse proxy headers.
 if (getenv('DRUPALFORGE_DEVCONTAINER') && isset($_SERVER['HTTP_X_FORWARDED_HOST'], $_SERVER['REMOTE_ADDR'])) {
